@@ -1,0 +1,54 @@
+## Description ##
+RepARK.pl is a wrapper script for constructing a repeat library from sequencing reads using Jellyfish and Velvet.
+
+
+## System Requirements ##
+- Jellyfish (tested with version 1.1.6)
+	http://www.cbcb.umd.edu/software/jellyfish
+- Velvet (tested with version 1.2.08)
+	http://www.ebi.ac.uk/~zerbino/velvet
+
+Both programs should be in the PATH, or the appropriate variables (e.g. $jellyfish_path) in RepARK.pl should be modified appropriately.
+
+
+## Input Data ##
+Input data can be one or more fasta or fastq files. They can be given as arguments with the option -l (multiple times) or included in the RepARK.pl
+
+
+## Example Demo Data ##
+In order to test the pipeline run ./RepARK.pl without arguments.
+The command line parameters are optional. If either are omitted, RepARK.pl will use the defaults which are adapted to the demo data.
+Check if the assembly results in 133 sequences of a size between 27,902-27,917bp. Due to velvet creates slightly different assemblies with the same data, we provided this size range and 10 libraries based on the demo data with defauld parameters that can be downloaded from [1]. If you discover greater disagreements please contact the authors (see Support).
+
+
+## Output ##
+The repeat consensuses can be found in the file RepARK_lib.fasta.
+
+
+## Usage ##
+
+RepARK.pl [ options ]
+
+Options:
+  -o  output dir 
+  -l  library file - can be used multiple times 
+  -s  jellyfish hash size [31] 
+  -k  jellyfish kmer size [100000000]
+  -p  number of threads used by jellyfish [1]
+  -t  set manually a threshold, if automatic prediction is not working (this step will then be skipped)
+  -d  debug mode gives some more information
+  -n --nojf skip Jellyfish computation (jf_RepARK.kmers|histo must exist in the working dir)
+  -h --help  this help
+
+
+## Notes ##
+For 40x human data, we set -s to 54100000000 which reserves 370Gb of RAM for jellyfish but there is no merging of the intermediate files needed.
+
+In order to discriminate between the error peak and the unique-kmer peak, sufficient read coverage depth is required (>10x).
+
+## Support ##
+In case of problems, please run the script in debugging mode (-d) and send the output to philippk@fli-leibniz.de.
+
+
+
+[1] ftp://genome.fli-leibniz.de/pub/repeat-assemblies/RepARKdemoruns.tar.gz
