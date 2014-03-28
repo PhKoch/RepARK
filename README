@@ -3,7 +3,7 @@ RepARK.pl is a wrapper script for constructing a repeat library from sequencing 
 
 
 ## System Requirements ##
-- Jellyfish (tested with version 1.1.6)
+- Jellyfish (tested with versions 1.1.6, 2.1.1)
 	http://www.cbcb.umd.edu/software/jellyfish
 - Velvet (tested with version 1.2.08)
 	http://www.ebi.ac.uk/~zerbino/velvet
@@ -42,7 +42,7 @@ Options:
 
 
 ## Notes ##
-For 40x human data, we set -s to 54100000000 which reserves 370Gb of RAM for jellyfish but there is no merging of the intermediate files needed.
+For 40x human data, we set -s to 54100000000 which reserves 370Gb of RAM for jellyfish (v 1.1.6) but there is no merging of the intermediate files needed.
 
 In order to discriminate between the error peak and the unique-kmer peak, sufficient read coverage depth is required (>10x).
 
@@ -52,3 +52,10 @@ In case of problems, please run the script in debugging mode (-d) and send the o
 
 
 [1] ftp://genome.fli-leibniz.de/pub/repeat-assemblies/RepARKdemoruns.tar.gz
+
+
+Change Log
+---------
+1.2.1	- Included support for jellyfish v2.x
+
+1.2.	- Initial release

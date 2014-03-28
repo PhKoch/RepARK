@@ -13,7 +13,7 @@
 #        NOTES:  ---
 #       AUTHOR:  Philipp Koch, Bryan Downie     
 #      COMPANY:  Leibniz Institute for Age Research - Fritz Lipmann Institute
-#      VERSION:  1.2
+#      VERSION:  1.2.1
 #===============================================================================
 
 use strict;
@@ -23,7 +23,7 @@ use Getopt::Long;
 use File::Spec;
 use File::Basename;
 
-my $jellyfish_path = ""; 	# example: "/bin/jellyfish-1.1.6/"
+my $jellyfish_path = ""; 	# example: "/bin/jellyfish-1.1.6/bin/" (needs the slash)
 my $velvet_path = ""; 		# where your velveth/velvetg binary is located
 				### can left empty, if programs are in PATH
 
@@ -91,7 +91,7 @@ if ($usage)  {
 	print  "  -n --nojf  skip Jellyfish computation (jf_RepARK.kmers|histo must exist in the working dir)\n";
 	print  "  -h --help  this help\n";
 	print  "\nIf no options are provided, the script looks for the demo data pe400.fq and creates a repeat library based on that.\n";
-	print  "\nversion 1.2\n";
+	print  "\nversion 1.2.1\n";
 	exit;
 }	  
 
@@ -112,6 +112,17 @@ chdir $prefix;
 
 
 ## Jellyfish
+
+# check for jellyfish version
+my $jfversion = `${jellyfish_path}jellyfish --version`;
+$jfversion =~ s/jellyfish (\d+)\..*/$1/;
+#print "jellyfish version: $jfversion\n";
+
+if ($jellyfish_kmer_size > 31 && $jfversion < 2) {
+	print STDERR "You are using an older version of jellyfish. K-mer sizes above 31 are only supported by jellyfish version 2.x\n";
+	exit;
+}
+	
 if ($NOJF) {
 	if (-e "jf_RepARK.kmers") {print "using existing kmers file \"jf_RepARK.kmers\"\n" if ($DEBUG);}
 #		else {print STDERR "file \"jf_RepARK.kmers\" not found\n"; }
@@ -184,21 +195,34 @@ sub run_jellyfish {
 	print  "Counting kmers with: $jellyfish_command\n";
 	system $jellyfish_command;
 
-	if (-e "jellyfish_1") {
-		my $jf_merge = "${jellyfish_path}jellyfish merge -s $jf_hash_size -o mergedjellyfish.db jellyfish_*";
-		print  "Merging dbs with: $jf_merge\n";
-		system ($jf_merge);
-		if (-e "mergedjellyfish.db"){
-			rename ("mergedjellyfish.db", "jf_RepARK.db");
-			unlink glob "jellyfish_*" or warn "Could not unlink file: $!";
+	# If we work with an older jellyfish version, we probably need to merge the output files.
+	if ($jfversion < 2){
+		if (-e "jellyfish_1") {
+			my $jf_merge = "${jellyfish_path}jellyfish merge -s $jf_hash_size -o mergedjellyfish.db jellyfish_*";
+			print  "Merging dbs with: $jf_merge\n";
+			system ($jf_merge);
+			if (-e "mergedjellyfish.db"){
+				rename ("mergedjellyfish.db", "jf_RepARK.db");
+				unlink glob "jellyfish_*" or warn "Could not unlink file: $!";
+			}
+		}
+		elsif (-e "jellyfish_0") { 
+			rename ("jellyfish_0", "jf_RepARK.db");
+		}
+		else {
+			print "Jellyfish did not properly finish. Please check the command and rerun.\n";
+			exit;		
 		}
 	}
-	elsif (-e "jellyfish_0") { 
-		rename ("jellyfish_0", "jf_RepARK.db");
-	}
+	# For newer versions of jellyfish, the merge is done by the program.
 	else {
-		print "Jellyfish did not properly finish. Please check the command and rerun.\n";
-		exit;		
+		if (-e "jellyfish") {
+			rename ("jellyfish", "jf_RepARK.db");
+		}
+		else {
+			print "Jellyfish did not properly finish. Please check the command and rerun.\n";
+			exit;
+		}
 	}
 	
 	my $jf_dump = "${jellyfish_path}jellyfish dump jf_RepARK.db > jf_RepARK.kmers";
