@@ -13,7 +13,7 @@
 #        NOTES:  ---
 #       AUTHOR:  Philipp Koch, Bryan Downie     
 #      COMPANY:  Leibniz Institute for Age Research - Fritz Lipmann Institute
-#      VERSION:  1.2.1
+#      VERSION:  1.2.2
 #===============================================================================
 
 use strict;
@@ -76,6 +76,11 @@ foreach  (@libs){
 
 unless ($ret) {$usage = 1;}
 
+if ($jellyfish_kmer_size <=29){
+	print "Error: K-mer size <=29. Velvet won't assemble anything. You can increase k, decrease velvets hash size (within the RepARK code) or integrate another assembler.\n";
+	exit;
+}
+
 if ($usage)  {
 	print  "Unknown option: @_\n" if ( @_ );
 	print  "Usage: RepARK.pl [ options ]\n";
@@ -91,7 +96,7 @@ if ($usage)  {
 	print  "  -n --nojf  skip Jellyfish computation (jf_RepARK.kmers|histo must exist in the working dir)\n";
 	print  "  -h --help  this help\n";
 	print  "\nIf no options are provided, the script looks for the demo data pe400.fq and creates a repeat library based on that.\n";
-	print  "\nversion 1.2.1\n";
+	print  "\nversion 1.2.2\n";
 	exit;
 }	  
 
