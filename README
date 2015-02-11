@@ -32,8 +32,8 @@ RepARK.pl [ options ]
 Options:
   -o  output dir 
   -l  library file - can be used multiple times 
-  -s  jellyfish hash size [31] 
-  -k  jellyfish kmer size [100000000]
+  -s  jellyfish hash size [100000000] 
+  -k  jellyfish kmer size [31]
   -p  number of threads used by jellyfish [1]
   -t  set manually a threshold, if automatic prediction is not working (this step will then be skipped)
   -d  debug mode gives some more information
