@@ -3,7 +3,7 @@ RepARK.pl is a wrapper script for constructing a repeat library from sequencing 
 
 
 ## System Requirements ##
-- Jellyfish (tested with versions 1.1.6, 2.1.1)
+- Jellyfish (tested with versions 1.1.6, 2.1.1, 2.1.4)
 	http://www.cbcb.umd.edu/software/jellyfish
 - Velvet (tested with version 1.2.08)
 	http://www.ebi.ac.uk/~zerbino/velvet
