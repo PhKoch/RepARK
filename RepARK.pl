@@ -13,7 +13,7 @@
 #        NOTES:  ---
 #       AUTHOR:  Philipp Koch, Bryan Downie     
 #      COMPANY:  Leibniz Institute for Age Research - Fritz Lipmann Institute
-#      VERSION:  1.2.2
+#      VERSION:  1.3.0
 #===============================================================================
 
 use strict;
@@ -23,9 +23,10 @@ use Getopt::Long;
 use File::Spec;
 use File::Basename;
 
-my $jellyfish_path = ""; 	# example: "/bin/jellyfish-1.1.6/bin/" (needs the slash)
-my $velvet_path = ""; 		# where your velveth/velvetg binary is located
-				### can left empty, if programs are in PATH
+my $jellyfish_path = ""; 	# the folder where your jellyfish binary is located, example: "/bin/jellyfish-1.1.6/bin/" (needs the slash)
+my $velvet_path = ""; 		# the folder where your velveth/velvetg binaries are located, example: "/bin/" (needs the slash)
+my $clc_path = "";		# the folder where your clc_assembler binary is located, example: "/bin/clc_assembly_cell/" (needs the slash)
+				### leave empty, if programs are in PATH
 
 my $RepARK_prefix = dirname(File::Spec->rel2abs($0));
 
@@ -38,18 +39,31 @@ my $manual_threshold;
 my $assembler = "velvet"; 
 my $prefix = "RepARK_working";
 my @libfiles;
-push (@libfiles, "pe400.fq");
+push (@libfiles, "pe400.fq.gz");	# this first library can be changed here or dynamically given to the script with the -l option
 #push (@libfiles, "more.fa");		# here you can add more default read libraries
 #push (@libfiles, "evenmore.fq");	# here you can add more default read libraries
+					# but don't mix compressed and uncompressed data
 
 my @libs;
+
+# collect here the implemented assemblers
+my %implemented_assemblers;
+$implemented_assemblers{"velvet"} = 1;
+$implemented_assemblers{"clc"} = 1;
+#$implemented_assemblers{"some_other_assembler"} = 1;	# here more assemblers can be added
+
+# we also wanna have the above information in an array
+my @implemented_assemblers;
+for my $key (keys %implemented_assemblers) {
+	push (@implemented_assemblers , $key);
+}
 
 my ($DEBUG, $NOJF);
 
 	  
 my $ret = GetOptions(	'o=s' => \$prefix,
 		'l=s' => \@libs,
-#		'a=s' => \$assembler,
+		'a=s' => \$assembler,
 		's=i' => \$jellyfish_hash_size,
 		'k=i' => \$jellyfish_kmer_size,
 		'p=i' => \$thread_count,
@@ -74,20 +88,30 @@ foreach  (@libs){
 	}
 }
 
-unless ($ret) {$usage = 1;}
 
+# check for assembler implementation
+unless (exists $implemented_assemblers{$assembler}) {
+	print  "Assembler $assembler not known!\nPlease provide one of the following possibilities for option -a: ".join(",",@implemented_assemblers)."\n\n"; 
+	$usage = 1;
+}
+
+
+# check for minimum kmer size
 if ($jellyfish_kmer_size <=29){
-	print "Error: K-mer size <=29. Velvet won't assemble anything. You can increase k, decrease velvets hash size (within the RepARK code) or integrate another assembler.\n";
+	print "Error: K-mer size <=29. Velvet won't assemble anything. You can increase -k option, decrease velvets hash size or integrate another assembler (within the RepARK code).\n";
 	exit;
 }
+
+unless ($ret) {$usage = 1;}
+
 
 if ($usage)  {
 	print  "Unknown option: @_\n" if ( @_ );
 	print  "Usage: RepARK.pl [ options ]\n";
-	print  "Options:\n"; 
+	print  "Options: [default_values]\n"; 
 	print  "  -o  output dir [RepARK_working]\n";
-	print  "  -l  library file - can be used multiple times [pe400.fq]\n";
-#	print  "  -a  assembler  \n";
+	print  "  -l  library file - can be used multiple times [pe400.fq.gz]\n";
+	print  "  -a  assembler  (options: ".join(",",@implemented_assemblers).") [velvet]\n";
 	print  "  -s  jellyfish hash size [100000000] \n";
 	print  "  -k  jellyfish kmer size [31]\n";
 	print  "  -p  number of threads used by jellyfish [1]\n";
@@ -96,7 +120,7 @@ if ($usage)  {
 	print  "  -n --nojf  skip Jellyfish computation (jf_RepARK.kmers|histo must exist in the working dir)\n";
 	print  "  -h --help  this help\n";
 	print  "\nIf no options are provided, the script looks for the demo data pe400.fq and creates a repeat library based on that.\n";
-	print  "\nversion 1.2.2\n";
+	print  "\nversion 1.3.0\n";
 	exit;
 }	  
 
@@ -174,11 +198,19 @@ else {
 ## Assembly
 if ($assembler eq "velvet") { 
 	my $velvet_cmd = "${velvet_path}velveth velvet_repeat_lib 29 -fasta jf_RepARK.repeat.kmers > velvet.log 2>&1 ; ${velvet_path}velvetg velvet_repeat_lib -cov_cutoff auto -exp_cov auto -scaffolding no >> velvet.log 2>&1 ";
-	print  "Assembling: $velvet_cmd\n";
+	print  "Assembling with velvet: $velvet_cmd\n";
 	system $velvet_cmd;
 	symlink "velvet_repeat_lib/contigs.fa", "repeat_lib.fasta"; 
 }
-else {
+elsif ($assembler eq "clc") { 
+	## for clc the kmer-/word size is dynamically chosen by clc_assembler  -  if you wish to set it anyway add '-w 29' to the command
+	my $clc_cmd = "${clc_path}clc_assembler -q jf_RepARK.repeat.kmers -o repeat_lib.fasta -v > clc.log 2>&1 ";
+	print  "Assembling with CLC: $clc_cmd\n";
+	system $clc_cmd;
+}
+
+else {	
+	# actually, we check this at the beginning
 	print "Assembler \"$assembler\" not known. Assembly step skipped.\n";
 }
 
@@ -191,12 +223,29 @@ print "Done. Check the directory $prefix for results.\n";
 #
 # Subroutines from here on
 
+#### BRD update
+#  my $catcmd = "cat ";
+#    if ($read_set[0] =~ /gz$/) {
+#        $catcmd = "gunzip -c ";
+#    }
+#    $catcmd .= join " ", @read_set;
+#
+#    my $jellyfish_command = "$catcmd | ${jellyfish_path}jellyfish count -s $jf_hash_size -C -m $jf_kmer_size -t $thread_count -o jellyfish /dev/stdin"; 
+########
 
 sub run_jellyfish {
 	my ($jf_hash_size, $jf_kmer_size, $threads, @read_set) = @_;
 
-	my $jellyfish_command = "${jellyfish_path}jellyfish count -s $jf_hash_size -C -m $jf_kmer_size -t $thread_count -o jellyfish ";
-	$jellyfish_command .= join " ", @read_set;
+	my $catcmd = "cat ";
+	if ($read_set[0] =~ /gz$/) {
+		$catcmd = "gunzip -c ";
+	}
+	$catcmd .= join " ", @read_set;
+	
+	my $jellyfish_command = "$catcmd | ${jellyfish_path}jellyfish count -s $jf_hash_size -C -m $jf_kmer_size -t $thread_count -o jellyfish /dev/stdin";
+#	my $jellyfish_command = "${jellyfish_path}jellyfish count -s $jf_hash_size -C -m $jf_kmer_size -t $thread_count -o jellyfish ";
+#	$jellyfish_command .= join " ", @read_set;
+
 	print  "Counting kmers with: $jellyfish_command\n";
 	system $jellyfish_command;
 
@@ -374,7 +423,7 @@ sub calc_threshold {
 	}
 
 
-	# Do smoothing;
+	# 
 	my @smoothed_raw = smooth_array($smooth_param, @raw);
 	my @first_deriv;
 	for (my $i =  1+$smooth_offset; $i < $#smoothed_raw - 1; $i++) {

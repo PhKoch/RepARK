@@ -1,5 +1,5 @@
 ## Description ##
-RepARK.pl is a wrapper script for constructing a repeat library from sequencing reads using Jellyfish and Velvet.
+RepARK.pl is a wrapper script for constructing a repeat library from sequencing reads using Jellyfish and either Velvet or CLC.
 
 
 ## System Requirements ##
@@ -7,13 +7,15 @@ RepARK.pl is a wrapper script for constructing a repeat library from sequencing 
 	http://www.cbcb.umd.edu/software/jellyfish
 - Velvet (tested with version 1.2.08)
 	http://www.ebi.ac.uk/~zerbino/velvet
+- CLC Assembler (optional, tested with version 4.4.0)
+	http://www.clcbio.com/
 
-Both programs should be in the PATH, or the appropriate variables (e.g. $jellyfish_path) in RepARK.pl should be modified appropriately.
+These programs should be in the PATH, or the appropriate variables (e.g. $jellyfish_path) in RepARK.pl should be modified appropriately.
 
 
 ## Input Data ##
 Input data can be one or more fasta or fastq files. They can be given as arguments with the option -l (multiple times) or included in the RepARK.pl
-
+The reads can be in gzipped format ending with ".gz". Note that it is currently not supported to mix compressd and uncompressed libraries.
 
 ## Example Demo Data ##
 In order to test the pipeline run ./RepARK.pl without arguments.
@@ -22,22 +24,23 @@ Check if the assembly results in 133 sequences of a size between 27,902-27,917bp
 
 
 ## Output ##
-The repeat consensuses can be found in the file RepARK_lib.fasta.
+The repeat consensuses can be found in the file repeat_lib.fasta within the working directory.
 
 
 ## Usage ##
 
 RepARK.pl [ options ]
 
-Options:
-  -o  output dir 
-  -l  library file - can be used multiple times 
-  -s  jellyfish hash size [100000000] 
+Options: [default_values]
+  -o  output dir [RepARK_working]
+  -l  library file - can be used multiple times [pe400.fq.gz]
+  -a  assembler  (options: clc,velvet) [velvet]
+  -s  jellyfish hash size [100000000]
   -k  jellyfish kmer size [31]
   -p  number of threads used by jellyfish [1]
   -t  set manually a threshold, if automatic prediction is not working (this step will then be skipped)
   -d  debug mode gives some more information
-  -n --nojf skip Jellyfish computation (jf_RepARK.kmers|histo must exist in the working dir)
+  -n --nojf  skip Jellyfish computation (jf_RepARK.kmers|histo must exist in the working dir)
   -h --help  this help
 
 
@@ -56,6 +59,9 @@ In case of problems, please run the script in debugging mode (-d) and send the o
 
 Change Log
 ---------
+1.3.0	- clc_assembler support
+	- gzipped input file support
+	
 1.2.2	- Checking for k <= velvet's hash size
 
 1.2.1	- Included support for jellyfish v2.x
