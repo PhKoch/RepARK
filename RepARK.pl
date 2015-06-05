@@ -223,15 +223,6 @@ print "Done. Check the directory $prefix for results.\n";
 #
 # Subroutines from here on
 
-#### BRD update
-#  my $catcmd = "cat ";
-#    if ($read_set[0] =~ /gz$/) {
-#        $catcmd = "gunzip -c ";
-#    }
-#    $catcmd .= join " ", @read_set;
-#
-#    my $jellyfish_command = "$catcmd | ${jellyfish_path}jellyfish count -s $jf_hash_size -C -m $jf_kmer_size -t $thread_count -o jellyfish /dev/stdin"; 
-########
 
 sub run_jellyfish {
 	my ($jf_hash_size, $jf_kmer_size, $threads, @read_set) = @_;
@@ -243,8 +234,6 @@ sub run_jellyfish {
 	$catcmd .= join " ", @read_set;
 	
 	my $jellyfish_command = "$catcmd | ${jellyfish_path}jellyfish count -s $jf_hash_size -C -m $jf_kmer_size -t $thread_count -o jellyfish /dev/stdin";
-#	my $jellyfish_command = "${jellyfish_path}jellyfish count -s $jf_hash_size -C -m $jf_kmer_size -t $thread_count -o jellyfish ";
-#	$jellyfish_command .= join " ", @read_set;
 
 	print  "Counting kmers with: $jellyfish_command\n";
 	system $jellyfish_command;

@@ -10,7 +10,7 @@ RepARK.pl is a wrapper script for constructing a repeat library from sequencing 
 - CLC Assembler (optional, tested with version 4.4.0)
 	http://www.clcbio.com/
 
-These programs should be in the PATH, or the appropriate variables (e.g. $jellyfish_path) in RepARK.pl should be modified appropriately.
+These programs should be in the PATH, or the appropriate variables (e.g. $jellyfish_path) in RepARK.pl should be modified accordingly.
 
 
 ## Input Data ##
